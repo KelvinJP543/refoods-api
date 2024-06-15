@@ -143,6 +143,11 @@ const registerHandler = async (request, h) => {
   const hashedPassword = await bcrypt.hash(password, 10);
 
   try {
+    const existingUser = users.find(user => user.username === username);
+    if (existingUser) {
+      return h.response({ status: 'fail', message: 'Username sudah digunakan' }).code(409); // 409 Conflict
+    }
+
     users.push({ id_user, username, password: hashedPassword, nama_lengkap });
     return h.response({ status: 'success', message: 'User berhasil didaftarkan', data: { userId: id_user } }).code(201);
   } catch (err) {
@@ -164,8 +169,7 @@ const loginHandler = async (request, h) => {
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (isPasswordValid) {
-      const token = jwt.sign({ id: user.id_user }, process.env.JWT_SECRET || 'supersecretkey', { expiresIn: '1h' });
-      return h.response({ status: 'success', message: 'Login berhasil', data: { token } });
+      return h.response({ status: 'success', message: 'Login berhasil', data: { id_user: user.id_user, nama_lengkap: user.nama_lengkap } });
     } else {
       return h.response({ status: 'fail', message: 'Username atau password salah' }).code(401);
     }
